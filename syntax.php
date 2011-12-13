@@ -80,6 +80,9 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
         $data['cols']     = $this->getConf('cols');
         $data['filter']   = '';
         $data['lightbox'] = false;
+        $data['fancybox'] = false;
+        $data['fancyslideshow'] = false;
+        $data['cyclepics'] = false;
         $data['direct']   = false;
         $data['showname'] = false;
         $data['showtitle'] = false;
@@ -136,8 +139,9 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
 
         // implicit direct linking?
         if($data['lightbox']) $data['direct']   = true;
-
-
+        if($data['fancybox']) $data['direct']   = true;
+        if($data['fancyslideshow']) $data['direct']   = true;
+        
         return $data;
     }
 
@@ -350,6 +354,7 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
             $align  = ' gallery_center';
             $xalign = ' align="center"';
         }
+         
         if(!$data['_single']){
             if(!$align) $align = ' gallery_center'; // center galleries on default
             if(!$xalign) $xalign = ' align="center"';
@@ -362,7 +367,16 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
             $ret .= $this->_image($files[0],$data);
             $ret .= $this->_showname($files[0],$data);
             $ret .= $this->_showtitle($files[0],$data);
-        }elseif($data['cols'] > 0){ // format as table
+        }
+        elseif($data['cyclepics'])
+        {
+          #$ret .= '<div class="gallery_page cyclepics" id="gallery__'.$data['galid'].'">';
+          foreach($files as $img){
+            $ret .= $this->_image($img,$data)."\n";
+          }
+          #$ret .= '</div>';
+        }
+        elseif($data['cols'] > 0){ // format as table
             $close_pg = false;
 
             $i = 0;
@@ -471,7 +485,14 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
             $pgret .= '</div>';
         }
 
-        return '<div class="gallery'.$align.'"'.$xalign.'>'.$pgret.$ret.'<div class="clearer"></div></div>';
+        if($data['cyclepics'])
+        {
+          return '<div class="cyclepics">'.$pgret.$ret.'</div>';
+        }
+        else
+        {
+          return '<div class="gallery'.$align.'"'.$xalign.'>'.$pgret.$ret.'<div class="clearer"></div>'.'</div>';
+        }
     }
 
     /**
@@ -532,7 +553,16 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
             $href   = ml($img['id'],$dim_lightbox);
             $a['class'] = "lightbox JSnocheck";
             $a['rel']   = "lightbox";
-        }elseif($img['detail'] && !$data['direct']){
+        }elseif($data['fancybox']){
+            $href   = ml($img['id'],$dim_lightbox);
+            $a['class'] = "fancybox JSnocheck";
+            $a['rel']   = "fancybox";
+        }elseif($data['fancyslideshow']){
+            $href   = ml($img['id'],$dim_lightbox);
+            $a['class'] = "fancyslideshow JSnocheck";
+            $a['rel']   = "fancyslideshow";
+        }
+        elseif($img['detail'] && !$data['direct']){
             $href   = $img['detail'];
         }else{
             $href   = ml($img['id'],array('id'=>$ID),$data['direct']);
@@ -541,9 +571,15 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
 
         // prepare output
         $ret  = '';
-        $ret .= '<a href="'.$href.'" '.$aatt.'>';
+        if(!$data['cyclepics'])
+        {
+          $ret .= '<a href="'.$href.'" '.$aatt.'>';
+        }
         $ret .= '<img src="'.$src.'" '.$iatt.' />';
-        $ret .= '</a>';
+        if(!$data['cyclepics'])
+        {
+          $ret .= '</a>';
+        }
         return $ret;
     }
 
