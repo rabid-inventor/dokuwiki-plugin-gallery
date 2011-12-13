@@ -1,7 +1,16 @@
 gallery Plugin for DokuWiki
 
-All documentation for this plugin can be found at
+Main documentation for this plugin can be found at
 http://www.dokuwiki.org/plugin:gallery
+
+The following extra options are only in this fork
+fancybox        - need fancybox installed inside the gallery folder called fancybox
+fancyslideshow  - 
+cyclepics       - takes all the images and shows only one box and cycles through them
+page            - makes links to a wiki page with the same name as the title of the image 
+page_trimnumbers- removes any numbers from the end of the name
+page_useid      - use the pageid instead of title
+
 
 If you install this plugin manually, make sure it is installed in
 lib/plugins/gallery/ - if the folder is called different it
