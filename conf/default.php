@@ -13,3 +13,6 @@ $conf['cols']             = 5;
 
 $conf['sort'] = 'file';
 $conf['options'] = 'cache';
+
+$conf['appid'] = '';
+$conf['secret'] = '';

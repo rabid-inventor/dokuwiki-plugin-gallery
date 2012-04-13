@@ -20,3 +20,6 @@ $lang['sort_o_title'] = 'sort by EXIF title';
 
 $lang['options'] = 'Additional gallery default options';
 
+$lang['appid'] = 'Facebook App ID';
+$lang['secret'] = 'Facebook App Secret';
+

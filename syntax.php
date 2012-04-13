@@ -6,6 +6,8 @@
  * @author     Andreas Gohr <andi@splitbrain.org>
  * @author     Joe Lapp <joe.lapp@pobox.com>
  * @author     Dave Doyle <davedoyle.canadalawbook.ca>
+ * @author     Martyn Eggleton for Access Space <martyn@access-space.org>
+ * @author     J. Drost-Tenfelde <info@drost-tenfelde.de>
  */
 
 if(!defined('DOKU_INC')) define('DOKU_INC',realpath(dirname(__FILE__).'/../../').'/');
@@ -66,10 +68,10 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
         $ns = trim($ns);
 
         // namespace (including resolving relatives)
-        if(!preg_match('/^https?:\/\//i',$ns)){
-            $data['ns'] = resolve_id(getNS($ID),$ns);
-        }else{
+        if(preg_match('/^(https?)|facebook:\/\//i',$ns)){
             $data['ns'] =  $ns;
+        }else{
+          $data['ns'] = resolve_id(getNS($ID),$ns);  
         }
 
         // set the defaults
@@ -142,8 +144,8 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
 
         // implicit direct linking?
         if($data['lightbox']) $data['direct']   = true;
-        if($data['fancybox']) $data['direct']   = true;
-        if($data['fancyslideshow']) $data['direct']   = true;
+        #if($data['fancybox']) $data['direct']   = true;
+        #if($data['fancyslideshow']) $data['direct']   = true;
         
         //Implicit page linking if using advanced page linking
         if($data['page_useid'] || $data['page_trimnumbers'])
@@ -234,6 +236,56 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
     }
 
     /**
+     * Loads images from a Facebook album
+     */
+    function _loadFacebook($url){
+        
+        if (!class_exists('Facebook')) { 
+          include_once('facebook.php');
+        }
+        // Initialise Facebook
+        $facebook = new Facebook( array(
+          'appId'  => $this->getConf('appid'),
+          'secret' => $this->getConf('secret'),
+          'cookie' => true, // enable optional cookie support
+        ) );
+        list($junk, $type, $id) = explode(':', $url);
+        
+        if($type == 'album')
+        {
+          $fql = "SELECT pid, src, src_small, src_big, src_big_width, src_big_height, created, modified, caption FROM photo WHERE aid = '" .$id."'  ORDER BY created DESC";
+        }
+        
+        $param  =   array(
+          'method'    => 'fql.query',
+          'query'     => $fql,
+          'callback'  => ''
+        );
+        $fql_results = $facebook->api($param);
+        
+        $files = array();
+        // Loop through the pictures
+        foreach( $fql_results as $pic ) 
+        {
+            $files[] = array(
+                'id'     => $pic['src_big'],
+                'isimg'  => true,
+                'file'   => basename($pic['src_big']),
+                // decode to avoid later double encoding
+                'title'  => $pic['caption'],
+                'desc'   => $pic['caption'],
+                'width'  => $pic['src_big_width'],
+                'height' => $pic['src_big_height'],
+                'mtime'  => $pic['modified'],
+                'ctime'  => $pic['created'],
+                'detail' => $pic['link'],
+            );
+            
+        }
+        return $files;
+    }
+
+    /**
      * Gather all photos matching the given criteria
      */
     function _findimages(&$data){
@@ -243,6 +295,10 @@ class syntax_plugin_gallery extends DokuWiki_Syntax_Plugin {
         // http URLs are supposed to be media RSS feeds
         if(preg_match('/^https?:\/\//i',$data['ns'])){
             $files = $this->_loadRSS($data['ns']);
+            $data['_single'] = false;
+        }
+        elseif(preg_match('/^facebook:/i',$data['ns'])){
+            $files = $this->_loadFacebook($data['ns']);
             $data['_single'] = false;
         }else{
             $dir = utf8_encodeFN(str_replace(':','/',$data['ns']));
